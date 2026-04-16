@@ -34,7 +34,11 @@ app.post('/webhook', async (req, res) => {
             console.log('🔊', message);
 
             // ⚠️ Solo funciona si hay audio disponible en el entorno
-            say.speak(message);
+            await fetch("http://https://181f-181-168-118-185.ngrok-free.app/speak", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: message })
+            });
         }
 
         res.status(200).send({ status: 'ok' });
