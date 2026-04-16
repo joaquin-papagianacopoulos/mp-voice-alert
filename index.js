@@ -47,7 +47,9 @@ app.post('/webhook', async (req, res) => {
         res.sendStatus(500);
     }
 });
-
+app.get('/', (req, res) => {
+    res.send('Servidor de Mercado Pago funcionando ✅');
+});
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en puerto ${PORT}`);
 });
