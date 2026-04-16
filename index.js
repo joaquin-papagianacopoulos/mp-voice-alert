@@ -1,6 +1,5 @@
 require('dotenv').config();
 const express = require('express');
-const axios = require('axios');
 const say = require('say');
 
 const app = express();
@@ -8,48 +7,44 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
-// Endpoint webhook
+/**
+ * Health check
+ */
+app.get('/', (req, res) => {
+    res.send('MP Voice Alert server running ✅ (MOCK MODE)');
+});
+
+/**
+ * Webhook endpoint
+ */
 app.post('/webhook', async (req, res) => {
     try {
         const { type, data } = req.body;
 
+        console.log('📩 Webhook recibido:', req.body);
+
         if (type === 'payment') {
-            const paymentId = data.id;
 
-            // Obtener info del pago
-            const response = await axios.get(
-                `https://api.mercadopago.com/v1/payments/${paymentId}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${process.env.ACCESS_TOKEN}`
-                    }
-                }
-            );
+            // 🔥 MOCK MODE: no consultamos Mercado Pago API
+            const mockAmount = 100; // podés cambiarlo manualmente
+            const mockPayer = "cliente de prueba";
 
-            const payment = response.data;
+            const message = `Has recibido una transferencia de ${mockAmount} pesos de ${mockPayer}`;
 
-            if (payment.status === 'approved') {
-                const amount = payment.transaction_amount;
-                const payer = payment.payer?.first_name || "alguien";
+            console.log('🔊', message);
 
-                const message = `Has recibido una transferencia de ${amount} pesos de ${payer}`;
-
-                console.log(message);
-
-                // Voz
-                say.speak(message);
-            }
+            // ⚠️ Solo funciona si hay audio disponible en el entorno
+            say.speak(message);
         }
 
-        res.sendStatus(200);
+        res.status(200).send({ status: 'ok' });
+
     } catch (error) {
-        console.error(error.message);
-        res.sendStatus(500);
+        console.error('❌ Error en webhook:', error.message);
+        res.status(500).send({ status: 'error' });
     }
 });
-app.get('/', (req, res) => {
-    res.send('Servidor de Mercado Pago funcionando ✅');
-});
+
 app.listen(PORT, () => {
-    console.log(`Servidor corriendo en puerto ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
 });
