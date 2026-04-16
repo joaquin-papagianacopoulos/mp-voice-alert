@@ -1,51 +1,56 @@
 require('dotenv').config();
 const express = require('express');
-const say = require('say');
+const axios = require('axios');
 
 const app = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
-/**
- * Health check
- */
 app.get('/', (req, res) => {
-    res.send('MP Voice Alert server running ✅ (MOCK MODE)');
+    res.send('MP Voice Alert REAL MODE');
 });
 
-/**
- * Webhook endpoint
- */
 app.post('/webhook', async (req, res) => {
     try {
         const { type, data } = req.body;
 
-        console.log('📩 Webhook recibido:', req.body);
+        console.log("📩 Webhook recibido:", req.body);
 
         if (type === 'payment') {
 
-            // 🔥 MOCK MODE: no consultamos Mercado Pago API
-            const mockAmount = 100; // podés cambiarlo manualmente
-            const mockPayer = "cliente de prueba";
+            const paymentId = data.id;
 
-            const message = `Has recibido una transferencia de ${mockAmount} pesos de ${mockPayer}`;
+            // 🔥 LLAMADA REAL A MERCADO PAGO
+            const response = await axios.get(
+                `https://api.mercadopago.com/v1/payments/${paymentId}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${process.env.ACCESS_TOKEN}`
+                    }
+                }
+            );
 
-            console.log('🔊', message);
+            const payment = response.data;
 
-            // ⚠️ Solo funciona si hay audio disponible en el entorno
-            await fetch("http://https://181f-181-168-118-185.ngrok-free.app/speak", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text: message })
+            const amount = payment.transaction_amount;
+            const payer = payment.payer?.first_name || "alguien";
+
+            const message = `Has recibido ${amount} pesos de ${payer}`;
+
+            console.log("🔊", message);
+
+            // enviar a tu PC
+            await axios.post("https://181f-181-168-118-185.ngrok-free.app/speak", {
+                text: message
             });
         }
 
-        res.status(200).send({ status: 'ok' });
+        res.json({ status: "ok" });
 
     } catch (error) {
-        console.error('❌ Error en webhook:', error.message);
-        res.status(500).send({ status: 'error' });
+        console.error("❌ ERROR:", error.message);
+        res.status(500).json({ status: "error" });
     }
 });
 
